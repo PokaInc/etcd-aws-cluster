@@ -44,7 +44,7 @@ if [[ ! $etcd_cluster_name ]]; then
     exit 5
 fi
 
-etcd_peer_urls=$(aws ec2 describe-instances --region $region --filter Name=tag:etcd-cluster-name,Values=$etcd_cluster_name --instance-ids $(aws autoscaling describe-auto-scaling-groups --region $region --auto-scaling-group-name $asg_name | jq .AutoScalingGroups[0].Instances[].InstanceId | xargs) | jq -r '.Reservations[].Instances | map(select(.NetworkInterfaces[].PrivateIpAddress | length > 0) | "http://" + .NetworkInterfaces[].PrivateIpAddress + ":2379")[]')
+etcd_peer_urls=$(aws ec2 describe-instances --region $region --filter Name=tag:etcd-cluster-name,Values=$etcd_cluster_name --instance-ids $(aws autoscaling describe-auto-scaling-groups --region $region --auto-scaling-group-name $asg_name | jq .AutoScalingGroups[0].Instances[] | select(.LifecycleState  == "InService") | .InstanceId | xargs) | jq -r '.Reservations[].Instances | map(select(.NetworkInterfaces[].PrivateIpAddress | length > 0) | "http://" + .NetworkInterfaces[].PrivateIpAddress + ":2379")[]')
 if [[ ! $etcd_peer_urls ]]; then
     echo "$pkg: unable to find members of auto scaling group"
     exit 6
